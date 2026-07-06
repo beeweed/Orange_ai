@@ -11,8 +11,12 @@ export function HeaderBar({ title, onReset, onOpenSettings }: Props) {
     <header className="chat-header" data-design-id="chat-header">
       <div className="brand">
         <div className="brand-badge">A</div>
-        <div className="brand-title">{title}</div>
+        <div className="brand-copy">
+          <div className="brand-title">{title}</div>
+          <div className="brand-subtitle">Orange AI coding workspace</div>
+        </div>
       </div>
+
       <div className="icon-actions">
         <button className="icon-btn" aria-label="Reset conversation" onClick={onReset}>
           <RotateCcw size={16} />

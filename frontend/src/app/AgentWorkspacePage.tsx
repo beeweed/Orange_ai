@@ -52,9 +52,7 @@ export function AgentWorkspacePage() {
     [activeChatId, chats],
   )
 
-  const readyToChat = Boolean(
-    providers[selectedProvider].apiKey && selectedModel && e2bApiKey,
-  )
+  const readyToChat = Boolean(providers[selectedProvider].apiKey && selectedModel && e2bApiKey)
 
   const { streamChat, stop } = useChatStream()
 
@@ -101,10 +99,12 @@ export function AgentWorkspacePage() {
   }
 
   const sendMessage = async () => {
-    if (!activeChat || runtime.isStreaming || !input.trim() || !readyToChat) {
-      if (!readyToChat) {
-        setSettingsOpen(true)
-      }
+    if (!activeChat || runtime.isStreaming || !input.trim()) {
+      return
+    }
+
+    if (!readyToChat) {
+      setSettingsOpen(true)
       return
     }
 
@@ -167,7 +167,7 @@ export function AgentWorkspacePage() {
           <section className="chat-column" data-design-id="chat-panel-container">
             <div className="chat-panel" data-design-id="chat-panel">
               <HeaderBar
-                title={activeChat?.title ?? 'AI Sandbox Coding Agent'}
+                title={activeChat?.title ?? 'Orange AI Coding Agent'}
                 onReset={clearCurrentChat}
                 onOpenSettings={() => setSettingsOpen(true)}
               />
@@ -197,6 +197,7 @@ export function AgentWorkspacePage() {
             tree={activeChat?.fileTree ?? []}
             selectedFilePath={activeChat?.selectedFilePath}
             selectedFileContent={activeChat?.selectedFileContent}
+            sandboxId={activeChat?.sandbox?.sandboxId}
             onRefresh={() => {
               void refreshFiles()
             }}
@@ -213,7 +214,7 @@ export function AgentWorkspacePage() {
             <div className="mobile-panel-card">
               <div className="mobile-chat-panel">
                 <HeaderBar
-                  title={activeChat?.title ?? 'AI Sandbox Coding Agent'}
+                  title={activeChat?.title ?? 'Orange AI Coding Agent'}
                   onReset={clearCurrentChat}
                   onOpenSettings={() => setSettingsOpen(true)}
                 />
@@ -245,12 +246,14 @@ export function AgentWorkspacePage() {
                   tree={activeChat?.fileTree ?? []}
                   selectedFilePath={activeChat?.selectedFilePath}
                   selectedFileContent={activeChat?.selectedFileContent}
+                  sandboxId={activeChat?.sandbox?.sandboxId}
                   onRefresh={() => {
                     void refreshFiles()
                   }}
                   onSelectFile={(path) => {
                     void openFile(path)
                   }}
+                  variant="mobile"
                 />
               </div>
             </div>

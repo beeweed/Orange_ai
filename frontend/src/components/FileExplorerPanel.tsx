@@ -1,140 +1,211 @@
-import { ChevronRight, FileCode2, Folder, RefreshCcw } from 'lucide-react'
 import clsx from 'clsx'
+import { ChevronRight, FileCode2, Folder, RefreshCcw } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FileNode } from '../types/app'
 import { fileTypeClass } from '../utils/chat'
 import { withLineNumbers } from '../utils/code'
 
 type TreeNodeProps = {
   node: FileNode
+  depth?: number
+  openPaths: Set<string>
+  togglePath: (path: string) => void
   selectedFilePath?: string
   onSelectFile: (path: string) => void
-}
-
-function TreeNode({ node, selectedFilePath, onSelectFile }: TreeNodeProps) {
-  if (node.type === 'dir') {
-    return (
-      <div className="tree-node">
-        <div className="tree-row">
-          <span className="tree-chevron open">
-            <ChevronRight size={10} />
-          </span>
-          <span className="tree-icon folder">
-            <Folder size={14} />
-          </span>
-          <span>{node.name}</span>
-        </div>
-        <div className="tree-children">
-          {node.children?.map((child) => (
-            <TreeNode
-              key={child.path}
-              node={child}
-              selectedFilePath={selectedFilePath}
-              onSelectFile={onSelectFile}
-            />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="tree-row clickable-row" onClick={() => onSelectFile(node.path)}>
-      <span className="tree-chevron" />
-      <span className={clsx('tree-icon', fileTypeClass(node))}>
-        <FileCode2 size={14} />
-      </span>
-      <span className={clsx(node.path === selectedFilePath && 'active-file-name')}>{node.name}</span>
-    </div>
-  )
 }
 
 type Props = {
   tree: FileNode[]
   selectedFilePath?: string
   selectedFileContent?: string
+  sandboxId?: string
   onRefresh: () => void
   onSelectFile: (path: string) => void
+  variant?: 'desktop' | 'mobile'
+}
+
+function collectDirectoryPaths(nodes: FileNode[]): string[] {
+  return nodes.flatMap((node) => {
+    if (node.type !== 'dir') return []
+    return [node.path, ...collectDirectoryPaths(node.children ?? [])]
+  })
+}
+
+function fileName(path?: string) {
+  return path?.split('/').at(-1) ?? 'No file selected'
+}
+
+function TreeNode({ node, depth = 0, openPaths, togglePath, selectedFilePath, onSelectFile }: TreeNodeProps) {
+  if (node.type === 'dir') {
+    const isOpen = openPaths.has(node.path)
+
+    return (
+      <div className="tree-node">
+        <button className="tree-row" onClick={() => togglePath(node.path)} style={{ paddingLeft: 14 + depth * 16 }}>
+          <span className={clsx('tree-chevron', isOpen && 'open')}>
+            <ChevronRight size={11} />
+          </span>
+          <span className="tree-icon folder">
+            <Folder size={14} />
+          </span>
+          <span>{node.name}</span>
+        </button>
+
+        {isOpen ? (
+          <div className="tree-children">
+            {node.children?.map((child) => (
+              <TreeNode
+                key={child.path}
+                node={child}
+                depth={depth + 1}
+                openPaths={openPaths}
+                togglePath={togglePath}
+                selectedFilePath={selectedFilePath}
+                onSelectFile={onSelectFile}
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
+  return (
+    <button
+      className={clsx('tree-row', 'clickable-row', node.path === selectedFilePath && 'active')}
+      onClick={() => onSelectFile(node.path)}
+      style={{ paddingLeft: 14 + depth * 16 }}
+    >
+      <span className="tree-chevron" />
+      <span className={clsx('tree-icon', fileTypeClass(node))}>
+        <FileCode2 size={14} />
+      </span>
+      <span className={clsx(node.path === selectedFilePath && 'active-file-name')}>{node.name}</span>
+    </button>
+  )
 }
 
 export function FileExplorerPanel({
   tree,
   selectedFilePath,
   selectedFileContent,
+  sandboxId,
   onRefresh,
   onSelectFile,
+  variant = 'desktop',
 }: Props) {
-  const lines = selectedFileContent ? withLineNumbers(selectedFileContent) : []
+  const lines = useMemo(() => (selectedFileContent ? withLineNumbers(selectedFileContent) : []), [selectedFileContent])
+  const [openPaths, setOpenPaths] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    setOpenPaths(new Set(collectDirectoryPaths(tree)))
+  }, [tree])
+
+  const togglePath = (path: string) => {
+    setOpenPaths((current) => {
+      const next = new Set(current)
+      if (next.has(path)) {
+        next.delete(path)
+      } else {
+        next.add(path)
+      }
+      return next
+    })
+  }
 
   return (
-    <div className="workspace-card">
+    <div className={clsx('workspace-card', variant === 'mobile' && 'workspace-card-mobile')}>
       <header className="workspace-header" data-design-id="right-panel-header">
         <div className="brand compact-brand">
-          <span style={{ color: 'var(--muted-foreground)', display: 'flex', alignItems: 'center' }}>
+          <span className="workspace-title-icon">
             <Folder size={18} />
           </span>
-          <span style={{ fontWeight: 600, fontSize: 14 }}>Workspace Files</span>
+          <span className="workspace-title">Workspace Files</span>
         </div>
+
         <button className="icon-btn" onClick={onRefresh} aria-label="Refresh files">
           <RefreshCcw size={16} />
         </button>
       </header>
 
-      <section className="panel-view files-layout active" data-design-id="file-panel">
-        <aside className="file-explorer" data-design-id="file-explorer">
-          <div className="explorer-header">
-            <span>Explorer</span>
-            <button aria-label="Refresh files" onClick={onRefresh}>
-              <RefreshCcw size={14} />
-            </button>
-          </div>
-          <div className="file-tree">
-            {tree.length ? (
-              tree.map((node) => (
-                <TreeNode
-                  key={node.path}
-                  node={node}
-                  selectedFilePath={selectedFilePath}
-                  onSelectFile={onSelectFile}
-                />
-              ))
-            ) : (
-              <div className="empty-pane">No sandbox files yet. Ask the agent to create something.</div>
-            )}
-          </div>
-        </aside>
+      <div className="panel-body">
+        <section className="panel-view files-layout active" data-design-id="file-panel">
+          <aside className="file-explorer" data-design-id="file-explorer">
+            <div className="explorer-header">
+              <span className="explorer-heading">
+                <Folder size={14} />
+                Explorer
+              </span>
+              <button aria-label="Refresh files" onClick={onRefresh}>
+                <RefreshCcw size={14} />
+              </button>
+            </div>
 
-        <div className="file-editor-region" data-design-id="code-editor-area">
-          <div className="tab-strip">
-            <div className="file-tab active">{selectedFilePath ? selectedFilePath.split('/').at(-1) : 'No file selected'}</div>
-          </div>
-          <div className="crumbs mono">{selectedFilePath || '/home/user'}</div>
-          <div className="editor-shell editor-flat">
-            <div className="editor-header">{selectedFilePath || 'Preview'}</div>
-            <div className="editor-stage">
-              {selectedFileContent ? (
-                <div className="code-preview">
-                  {lines.map((line, index) => (
-                    <div key={`${index}_${line}`} className="code-line">
-                      <span className="line-num">{index + 1}</span>
-                      <span>{line || ' '}</span>
-                    </div>
-                  ))}
-                </div>
+            <div className="file-tree">
+              {tree.length ? (
+                tree.map((node) => (
+                  <TreeNode
+                    key={node.path}
+                    node={node}
+                    openPaths={openPaths}
+                    togglePath={togglePath}
+                    selectedFilePath={selectedFilePath}
+                    onSelectFile={onSelectFile}
+                  />
+                ))
+              ) : sandboxId ? (
+                <div className="empty-pane left-pane-empty">No files loaded yet. Refresh the explorer after the agent creates output.</div>
               ) : (
-                <div className="empty-pane">Select a file from the explorer to preview its contents.</div>
+                <div className="empty-pane left-pane-empty">Start a chat run with a valid E2B key to create a sandbox and populate the workspace explorer.</div>
               )}
             </div>
-            <div className="editor-footer">
-              <div className="left">
-                <span>{selectedFilePath ? `Lines ${lines.length}` : 'No selection'}</span>
+          </aside>
+
+          <div className="file-editor-region" data-design-id="code-editor-area">
+            <div className="tab-strip">
+              <div className="file-tab active">
+                <span className={clsx('tree-icon', selectedFilePath ? 'ts' : 'file')}>
+                  <FileCode2 size={14} />
+                </span>
+                {fileName(selectedFilePath)}
               </div>
-              <div className="right">
-                <span>Sandbox preview</span>
+            </div>
+
+            <div className="crumbs mono">{selectedFilePath || (sandboxId ? '/home/user' : 'No sandbox connected')}</div>
+
+            <div className="editor-shell editor-flat">
+              <div className="editor-header">{selectedFilePath || 'Preview'}</div>
+              <div className="editor-stage">
+                {selectedFileContent ? (
+                  <div className="code-preview">
+                    {lines.map((line, index) => (
+                      <div key={`${index}_${line}`} className="code-line">
+                        <span className="line-num">{index + 1}</span>
+                        <span>{line || ' '}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-pane editor-empty-state">
+                    {sandboxId
+                      ? 'Select a file from the explorer to preview its contents.'
+                      : 'A sandbox preview will appear here after the first successful agent run.'}
+                  </div>
+                )}
+              </div>
+              <div className="editor-footer">
+                <div className="left">
+                  <span>{selectedFilePath ? `Lines ${lines.length}` : 'No selection'}</span>
+                  <span>{sandboxId ? 'Sandbox connected' : 'Sandbox offline'}</span>
+                </div>
+                <div className="right">
+                  <span>Preview only</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { ChevronDown, Send, Square } from 'lucide-react'
+import { ChevronDown, LoaderCircle, Send, Square, TriangleAlert } from 'lucide-react'
 import type { ProviderId, ProviderMeta, ProviderState, RuntimeState } from '../types/app'
 
 type Props = {
@@ -30,24 +30,31 @@ export function Composer({
   onModelChange,
   readyToChat,
 }: Props) {
-  const models = providers[selectedProvider].models
+  const provider = providers[selectedProvider]
+  const models = provider.models
+  const sendDisabled = runtime.isStreaming || !value.trim()
 
   return (
     <footer className="composer" data-design-id="chat-input-area">
       <div className="iteration-row">
         <div className="iteration-pill">
           <span className="live-dot" />
-          Iteration {runtime.iteration}/{runtime.maxIterations}
+          <span>
+            Iteration {runtime.iteration}/{runtime.maxIterations}
+          </span>
         </div>
+
         {runtime.isStreaming ? (
           <button className="stop-btn" onClick={onStop}>
-            <Square size={12} /> Stop
+            <Square size={12} />
+            Stop
           </button>
         ) : null}
       </div>
 
       {!readyToChat ? (
         <div className="warning-banner" data-design-id="api-key-warning">
+          <TriangleAlert size={16} />
           Configure a provider API key, select a model, and add an E2B API key in Settings to start chatting.
         </div>
       ) : null}
@@ -66,19 +73,21 @@ export function Composer({
             }
           }}
         />
+
         <div className="composer-actions stacked-on-mobile">
           <div className="model-stack">
             <label className="select-shell compact-select">
               <span className="model-icon">P</span>
               <select value={selectedProvider} onChange={(event) => onProviderChange(event.target.value as ProviderId)}>
-                {Object.entries(providerMeta).map(([provider, meta]) => (
-                  <option key={provider} value={provider}>
+                {Object.entries(providerMeta).map(([providerId, meta]) => (
+                  <option key={providerId} value={providerId}>
                     {meta.label}
                   </option>
                 ))}
               </select>
               <ChevronDown size={14} />
             </label>
+
             <label className="select-shell model-select">
               <span className="model-icon">M</span>
               <select value={selectedModel} onChange={(event) => onModelChange(event.target.value)}>
@@ -92,15 +101,28 @@ export function Composer({
               <ChevronDown size={14} />
             </label>
           </div>
-          <button
-            className="send-btn"
-            data-design-id="send-btn"
-            aria-label="Send message"
-            disabled={!readyToChat || runtime.isStreaming || !value.trim()}
-            onClick={onSend}
-          >
+
+          <button className="send-btn" data-design-id="send-btn" aria-label="Send message" disabled={sendDisabled} onClick={onSend}>
             <Send size={16} />
           </button>
+        </div>
+
+        <div className="composer-meta-row">
+          <span className="composer-meta-pill">{providerMeta[selectedProvider]?.label ?? selectedProvider}</span>
+          <span className="composer-meta-copy">
+            {provider.status === 'loading' ? (
+              <>
+                <LoaderCircle size={13} className="spin" />
+                Loading models…
+              </>
+            ) : provider.status === 'error' ? (
+              provider.error || 'Model loading failed.'
+            ) : selectedModel ? (
+              selectedModel
+            ) : (
+              'Choose a model to continue.'
+            )}
+          </span>
         </div>
       </div>
     </footer>
