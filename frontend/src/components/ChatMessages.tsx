@@ -1,9 +1,11 @@
-import { AlertTriangle, FilePlus2, FileText } from 'lucide-react'
+import { AlertTriangle, ChevronDown, FilePlus2, FileText, Settings2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RuntimeState, UiMessage } from '../types/app'
 
 type Props = {
   messages: UiMessage[]
   runtime: RuntimeState
+  onOpenSettings?: () => void
 }
 
 function renderAssistantCopy(content: string) {
@@ -12,9 +14,39 @@ function renderAssistantCopy(content: string) {
   ))
 }
 
-export function ChatMessages({ messages, runtime }: Props) {
+export function ChatMessages({ messages, runtime, onOpenSettings }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [isScrolledUp, setIsScrolledUp] = useState(false)
+
+  const scrollToBottom = useCallback(() => {
+    const container = scrollRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+      setIsScrolledUp(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+      setIsScrolledUp(distanceFromBottom > 100)
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    if (!isScrolledUp && messages.length > 0) {
+      scrollToBottom()
+    }
+  }, [messages, isScrolledUp, scrollToBottom])
+
   return (
-    <div className="messages">
+    <div className="messages" ref={scrollRef}>
       <div className="messages-stack">
         {messages.length === 0 ? (
           <div className="assistant-block welcome-block">
@@ -24,14 +56,19 @@ export function ChatMessages({ messages, runtime }: Props) {
               </div>
             </div>
             <div className="assistant-copy">
-              <p>
-                Configure a provider key, select a model, add your E2B sandbox key, then ask the agent to inspect,
-                create, or overwrite files in the live workspace.
-              </p>
-              <p>
-                The redesigned shell keeps chats, file previews, sandbox status, and settings in one responsive coding
-                environment.
-              </p>
+              <p>Configure a provider and sandbox key, then ask the agent to inspect, create, or overwrite files.</p>
+            </div>
+
+            <div className="quick-actions">
+              <button className="quick-action-card" onClick={onOpenSettings}>
+                <span className="quick-action-icon">
+                  <Settings2 size={16} />
+                </span>
+                <span className="quick-action-text">
+                  <strong>Configure provider</strong>
+                  <small>Add API keys and select a model</small>
+                </span>
+              </button>
             </div>
           </div>
         ) : null}
@@ -97,6 +134,12 @@ export function ChatMessages({ messages, runtime }: Props) {
             <AlertTriangle size={16} />
             {runtime.error}
           </div>
+        ) : null}
+
+        {isScrolledUp ? (
+          <button className="scroll-bottom-btn" onClick={scrollToBottom} aria-label="Scroll to bottom">
+            <ChevronDown size={16} />
+          </button>
         ) : null}
       </div>
     </div>

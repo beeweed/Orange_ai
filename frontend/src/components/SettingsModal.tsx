@@ -57,7 +57,16 @@ export function SettingsModal({
 
   return (
     <div className="overlay show" id="settings-overlay">
-      <div className="overlay-backdrop" onClick={onClose} />
+      <div
+        className="overlay-backdrop"
+        onClick={onClose}
+        role="presentation"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            onClose()
+          }
+        }}
+      />
 
       <div className="settings-modal" data-design-id="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div className="modal-head">

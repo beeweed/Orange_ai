@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { ChevronRight, FileCode2, Folder, RefreshCcw } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FileNode } from '../types/app'
 import { fileTypeClass } from '../utils/chat'
 import { withLineNumbers } from '../utils/code'
@@ -96,6 +96,7 @@ export function FileExplorerPanel({
 }: Props) {
   const lines = useMemo(() => (selectedFileContent ? withLineNumbers(selectedFileContent) : []), [selectedFileContent])
   const [openPaths, setOpenPaths] = useState<Set<string>>(new Set())
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     setOpenPaths(new Set(collectDirectoryPaths(tree)))
@@ -113,6 +114,12 @@ export function FileExplorerPanel({
     })
   }
 
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true)
+    onRefresh()
+    setTimeout(() => setRefreshing(false), 2000)
+  }, [onRefresh])
+
   return (
     <div className={clsx('workspace-card', variant === 'mobile' && 'workspace-card-mobile')}>
       <header className="workspace-header" data-design-id="right-panel-header">
@@ -123,8 +130,8 @@ export function FileExplorerPanel({
           <span className="workspace-title">Workspace Files</span>
         </div>
 
-        <button className="icon-btn" onClick={onRefresh} aria-label="Refresh files">
-          <RefreshCcw size={16} />
+        <button className="icon-btn" onClick={handleRefresh} aria-label="Refresh files">
+          <RefreshCcw size={16} className={refreshing ? 'spin' : ''} />
         </button>
       </header>
 
@@ -136,8 +143,8 @@ export function FileExplorerPanel({
                 <Folder size={14} />
                 Explorer
               </span>
-              <button aria-label="Refresh files" onClick={onRefresh}>
-                <RefreshCcw size={14} />
+              <button aria-label="Refresh files" onClick={handleRefresh}>
+                <RefreshCcw size={14} className={refreshing ? 'spin' : ''} />
               </button>
             </div>
 
@@ -173,8 +180,8 @@ export function FileExplorerPanel({
 
             <div className="crumbs mono">{selectedFilePath || (sandboxId ? '/home/user' : 'No sandbox connected')}</div>
 
-            <div className="editor-shell editor-flat">
-              <div className="editor-header">{selectedFilePath || 'Preview'}</div>
+                <div className="editor-shell editor-flat">
+                  <div className="editor-header">{fileName(selectedFilePath)}</div>
               <div className="editor-stage">
                 {selectedFileContent ? (
                   <div className="code-preview">

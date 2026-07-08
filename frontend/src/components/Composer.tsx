@@ -1,4 +1,4 @@
-import { ChevronDown, LoaderCircle, Send, Square, TriangleAlert } from 'lucide-react'
+import { ChevronDown, Cpu, LoaderCircle, Send, Server, Square, TriangleAlert } from 'lucide-react'
 import type { ProviderId, ProviderMeta, ProviderState, RuntimeState } from '../types/app'
 
 type Props = {
@@ -33,37 +33,46 @@ export function Composer({
   const provider = providers[selectedProvider]
   const models = provider.models
   const sendDisabled = runtime.isStreaming || !value.trim()
+  const showIteration = runtime.isStreaming || runtime.iteration > 0
 
   return (
     <footer className="composer" data-design-id="chat-input-area">
-      <div className="iteration-row">
-        <div className="iteration-pill">
-          <span className="live-dot" />
-          <span>
-            Iteration {runtime.iteration}/{runtime.maxIterations}
-          </span>
-        </div>
-
-        {runtime.isStreaming ? (
-          <button className="stop-btn" onClick={onStop}>
-            <Square size={12} />
-            Stop
-          </button>
-        ) : null}
-      </div>
-
-      {!readyToChat ? (
-        <div className="warning-banner" data-design-id="api-key-warning">
-          <TriangleAlert size={16} />
-          Configure a provider API key, select a model, and add an E2B API key in Settings to start chatting.
+      {showIteration ? (
+        <div className="iteration-bar">
+          <div className="iteration-pill">
+            <span className="live-dot" />
+            <span className="iteration-label">
+              <strong>{runtime.iteration}</strong>
+              <span className="iteration-sep">/</span>
+              {runtime.maxIterations}
+            </span>
+          </div>
+          {runtime.isStreaming ? (
+            <button className="stop-btn" onClick={onStop}>
+              <Square size={12} />
+              Stop
+            </button>
+          ) : null}
         </div>
       ) : null}
 
-      <div className="input-card" data-design-id="input-area">
+      {!readyToChat && !runtime.isStreaming ? (
+        <button className="setup-hint" onClick={() => console.log('open settings')}>
+          <TriangleAlert size={14} />
+          <span>Configure settings to start</span>
+          <ChevronDown size={14} className="hint-chevron" />
+        </button>
+      ) : null}
+
+      <div className="prompt-card">
         <textarea
-          className="input-field"
+          className="prompt-field"
           aria-label="Chat input"
-          placeholder="Ask the agent to read, create, or overwrite sandbox files…"
+          placeholder={
+            readyToChat
+              ? 'How can I help you build today?'
+              : 'Add your API key and model in Settings to start …'
+          }
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
@@ -72,25 +81,36 @@ export function Composer({
               onSend()
             }
           }}
+          disabled={runtime.isStreaming}
         />
 
-        <div className="composer-actions stacked-on-mobile">
-          <div className="model-stack">
-            <label className="select-shell compact-select">
-              <span className="model-icon">P</span>
-              <select value={selectedProvider} onChange={(event) => onProviderChange(event.target.value as ProviderId)}>
+        <div className="prompt-toolbar">
+          <div className="toolbar-left">
+            <label className="pill-select" aria-label="Provider">
+              <span className="pill-icon">
+                <Server size={13} />
+              </span>
+              <select
+                value={selectedProvider}
+                onChange={(event) => onProviderChange(event.target.value as ProviderId)}
+                disabled={runtime.isStreaming}
+              >
                 {Object.entries(providerMeta).map(([providerId, meta]) => (
                   <option key={providerId} value={providerId}>
                     {meta.label}
                   </option>
                 ))}
               </select>
-              <ChevronDown size={14} />
             </label>
-
-            <label className="select-shell model-select">
-              <span className="model-icon">M</span>
-              <select value={selectedModel} onChange={(event) => onModelChange(event.target.value)}>
+            <label className="pill-select" aria-label="Model">
+              <span className="pill-icon">
+                <Cpu size={13} />
+              </span>
+              <select
+                value={selectedModel}
+                onChange={(event) => onModelChange(event.target.value)}
+                disabled={runtime.isStreaming || provider.status === 'loading'}
+              >
                 <option value="">Select model</option>
                 {models.map((model) => (
                   <option key={model.id} value={model.id}>
@@ -98,21 +118,29 @@ export function Composer({
                   </option>
                 ))}
               </select>
-              <ChevronDown size={14} />
             </label>
           </div>
 
-          <button className="send-btn" data-design-id="send-btn" aria-label="Send message" disabled={sendDisabled} onClick={onSend}>
+          <button
+            className="prompt-send"
+            data-design-id="send-btn"
+            aria-label="Send message"
+            disabled={sendDisabled}
+            onClick={onSend}
+            title="Send message"
+          >
             <Send size={16} />
           </button>
         </div>
 
-        <div className="composer-meta-row">
-          <span className="composer-meta-pill">{providerMeta[selectedProvider]?.label ?? selectedProvider}</span>
-          <span className="composer-meta-copy">
+        <div className="prompt-meta">
+          {showIteration ? (
+            <span className="meta-pill">{providerMeta[selectedProvider]?.label ?? selectedProvider}</span>
+          ) : null}
+          <span className="meta-status">
             {provider.status === 'loading' ? (
               <>
-                <LoaderCircle size={13} className="spin" />
+                <LoaderCircle size={12} className="spin" />
                 Loading models…
               </>
             ) : provider.status === 'error' ? (

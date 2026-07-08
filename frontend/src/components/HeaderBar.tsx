@@ -1,12 +1,14 @@
+import clsx from 'clsx'
 import { RotateCcw, Settings2 } from 'lucide-react'
 
 type Props = {
   title: string
   onReset: () => void
   onOpenSettings: () => void
+  attention?: boolean
 }
 
-export function HeaderBar({ title, onReset, onOpenSettings }: Props) {
+export function HeaderBar({ title, onReset, onOpenSettings, attention }: Props) {
   return (
     <header className="chat-header" data-design-id="chat-header">
       <div className="brand">
@@ -21,7 +23,11 @@ export function HeaderBar({ title, onReset, onOpenSettings }: Props) {
         <button className="icon-btn" aria-label="Reset conversation" onClick={onReset}>
           <RotateCcw size={16} />
         </button>
-        <button className="icon-btn pulse" aria-label="Open settings" onClick={onOpenSettings}>
+        <button
+          className={clsx('icon-btn', attention && 'pulse')}
+          aria-label="Open settings"
+          onClick={onOpenSettings}
+        >
           <Settings2 size={16} />
         </button>
       </div>

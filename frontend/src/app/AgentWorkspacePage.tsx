@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { ChatHistorySidebar } from '../components/ChatHistorySidebar'
 import { ChatMessages } from '../components/ChatMessages'
@@ -150,47 +151,59 @@ export function AgentWorkspacePage() {
     setSelectedFile(filePath, preview.exists ? preview.content : 'File not found.')
   }
 
+  const onToggleSidebar = () => setSidebarOpen(!sidebarOpen)
+
   return (
     <div className="app" data-design-id="app-container">
-      <div className="desktop-shell" data-design-id="desktop-layout">
-        <div className="left-stage">
-          <ChatHistorySidebar
-            open={sidebarOpen}
-            chats={chats}
-            activeChatId={activeChat?.id ?? null}
-            onToggle={() => setSidebarOpen(!sidebarOpen)}
-            onCreate={createChat}
-            onSelect={selectChat}
-            onDelete={deleteChat}
-          />
+      {!sidebarOpen ? (
+        <button className="sidebar-fab" onClick={onToggleSidebar} aria-label="Open chat history">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+          </svg>
+        </button>
+      ) : null}
 
-          <section className="chat-column" data-design-id="chat-panel-container">
-            <div className="chat-panel" data-design-id="chat-panel">
-              <HeaderBar
-                title={activeChat?.title ?? 'Orange AI Coding Agent'}
-                onReset={clearCurrentChat}
-                onOpenSettings={() => setSettingsOpen(true)}
-              />
-              <ChatMessages messages={activeChat?.messages ?? []} runtime={runtime} />
-              <Composer
-                value={input}
-                onChange={setInput}
-                onSend={() => {
-                  void sendMessage()
-                }}
-                onStop={stop}
-                runtime={runtime}
-                providers={providers}
-                providerMeta={providerMeta}
-                selectedProvider={selectedProvider}
-                selectedModel={selectedModel}
-                onProviderChange={setSelectedProvider}
-                onModelChange={setSelectedModel}
-                readyToChat={readyToChat}
-              />
-            </div>
-          </section>
-        </div>
+      <div className={clsx('sidebar-backdrop', sidebarOpen && 'visible')} onClick={onToggleSidebar} aria-hidden="true" />
+
+      <ChatHistorySidebar
+        open={sidebarOpen}
+        chats={chats}
+        activeChatId={activeChat?.id ?? null}
+        onToggle={onToggleSidebar}
+        onCreate={createChat}
+        onSelect={selectChat}
+        onDelete={deleteChat}
+      />
+
+      <div className="desktop-shell" data-design-id="desktop-layout">
+        <section className="chat-column" data-design-id="chat-panel-container">
+          <div className="chat-panel" data-design-id="chat-panel">
+            <HeaderBar
+              title={activeChat?.title ?? 'Orange AI Coding Agent'}
+              onReset={clearCurrentChat}
+              onOpenSettings={() => setSettingsOpen(true)}
+              attention={!readyToChat}
+            />
+            <ChatMessages messages={activeChat?.messages ?? []} runtime={runtime} onOpenSettings={() => setSettingsOpen(true)} />
+            <Composer
+              value={input}
+              onChange={setInput}
+              onSend={() => {
+                void sendMessage()
+              }}
+              onStop={stop}
+              runtime={runtime}
+              providers={providers}
+              providerMeta={providerMeta}
+              selectedProvider={selectedProvider}
+              selectedModel={selectedModel}
+              onProviderChange={setSelectedProvider}
+              onModelChange={setSelectedModel}
+              readyToChat={readyToChat}
+            />
+          </div>
+        </section>
 
         <section className="workspace-wrap" data-design-id="right-panel-container">
           <FileExplorerPanel
@@ -217,8 +230,9 @@ export function AgentWorkspacePage() {
                   title={activeChat?.title ?? 'Orange AI Coding Agent'}
                   onReset={clearCurrentChat}
                   onOpenSettings={() => setSettingsOpen(true)}
+                  attention={!readyToChat}
                 />
-                <ChatMessages messages={activeChat?.messages ?? []} runtime={runtime} />
+                <ChatMessages messages={activeChat?.messages ?? []} runtime={runtime} onOpenSettings={() => setSettingsOpen(true)} />
                 <Composer
                   value={input}
                   onChange={setInput}
