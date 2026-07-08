@@ -69,3 +69,4 @@ Make the existing Orange AI monorepo deploy cleanly on Vercel from the repositor
 ## Status / open questions
 - Status: done
 - Open questions: none. The repo now contains a self-contained root deployment setup for Vercel.
+- Last validated locally: 2026-07-08
