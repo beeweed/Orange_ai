@@ -1,7 +1,8 @@
-const backendUrl = import.meta.env.VITE_BACKEND_URL
+const configuredBackendUrl = (import.meta.env.VITE_BACKEND_URL ?? '').trim()
+const fallbackOrigin = typeof window !== 'undefined' ? window.location.origin : ''
 
-if (!backendUrl) {
-  throw new Error('VITE_BACKEND_URL is missing. Add it to frontend/.env.')
-}
+const resolvedBaseUrl = (configuredBackendUrl || fallbackOrigin)
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '')
 
-export const BACKEND_URL = backendUrl.replace(/\/$/, '')
+export const BACKEND_URL = resolvedBaseUrl

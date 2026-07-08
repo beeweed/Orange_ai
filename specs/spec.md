@@ -39,6 +39,7 @@ Orange AI is a browser-based coding agent workspace with a React/Vite frontend a
 | Chat experience and composer | done | `specs/chat-experience/document.md` |
 | File workspace and editor preview | done | `specs/file-workspace/document.md` |
 | Settings and provider configuration flow | done | `specs/settings-flow/document.md` |
+| Vercel deployment compatibility | done | `specs/vercel-deployment/document.md` |
 
 ## Known constraints
 - The provided design is a static HTML export, not a componentized app.

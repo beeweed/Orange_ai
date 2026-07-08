@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci && cd frontend && npm ci && cd ../backend && npm ci",
+  "buildCommand": "npm run build:local",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "backend/dist/**",
+      "maxDuration": 300
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/health",
+      "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
