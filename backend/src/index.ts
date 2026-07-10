@@ -181,6 +181,4 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   })
 })
 
-app.listen(env.PORT, () => {
-  logger.info(`Backend listening on http://localhost:${env.PORT}`)
-})
+export default app
